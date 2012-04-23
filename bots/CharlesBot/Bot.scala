@@ -19,9 +19,12 @@ class Bot() {
     val (opcode, params) = CommandParser.apply(input)
 
     if (opcode == "React") {
+      var cmds = List[Cmd.Cmd]()
       val oldEnergy = energy
       energy = params("energy").toInt
-      //if (energy < oldEnergy) Cmd("Say", Map("text" -> "Ouch!"))
+      if (energy < oldEnergy) {
+        cmds ::= ("Say", Map("text" -> "Ouch!"))
+      }
       val board = Board(params("view"))
       var moves = List(Avoid)
       val horizon = 15
@@ -44,11 +47,12 @@ class Bot() {
         case 7 => XY(0, 1)
         case 8 => XY(1, 1)
       }
-      board.printBoard(horizon)
-      println(heuristics + " " + direction + " " + lastMove)
+      //board.printBoard(horizon)
+      //println(heuristics + " " + direction + " " + lastMove)
       lastMove = newMove
 
-      Cmd("Move", Map("dx" -> direction.x, "dy" -> direction.y))
+      val move = ("Move", Map("direction" -> (direction.x + ":" + direction.y)))
+      Cmd(move :: cmds)
     }
 
     else if (opcode == "Welcome") {
@@ -82,10 +86,12 @@ object CommandParser {
   }
 }
 
-
 object Cmd {
+  type Cmd = (String, Map[String, Any])
 
-  def apply(cmd: String, map: Map[String, Any]) = cmd + "(" + map.toList.map(a => a._1 + "=" + a._2).mkString(",") + ")"
+  def apply(cmds: List[Cmd]) = cmds.map {
+    case (cmd, map) => cmd + "(" + map.toList.map(a => a._1 + "=" + a._2).mkString(",") + ")"
+  }.mkString("|")
 }
 
 object Board {
